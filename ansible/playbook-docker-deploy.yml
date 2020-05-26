@@ -1,0 +1,38 @@
+---
+# Deploy web applications
+
+- hosts: local
+  user: bill
+  become: no
+  vars:
+    - webapp_path: "~/workspace/projects/devops/webapp"
+    - webapp_list:
+      - image_name: "flask-info"
+        version: "v1.0"
+        container_name: "flask-info"
+        links: ["my-db:db", "my-redis:redis"]
+        ports: "5000:5000"
+        state: "started"
+
+  tasks:
+    # - build webapp docker images
+    - name: Build webapp images
+      docker_image:
+        build:
+          path: "{{webapp_path}}/{{ item.directory|default(item.image_name) }}"
+          pull: yes
+        source: build
+        name: "{{ item.image_name }}"
+        tag: "{{ item.version }}"
+        state: present
+      with_items: "{{webapp_list}}"
+
+    # - deploy webapp docker containers
+    - name: Build webapp containers
+      docker_container:
+        image: "{{ item.image_name }}:{{ item.version }}"
+        name: "{{ item.container_name }}"
+        links: "{{ item.links }}"
+        ports: "{{ item.ports }}"
+        state: "{{ item.state }}"
+      with_items: "{{webapp_list}}"

@@ -1,0 +1,29 @@
+---
+# provisioning local machine
+- name: run the playbook tasks on the localhost
+  hosts: local
+  gather_facts: yes
+  user: bill
+  become: yes
+  become_method: sudo
+
+  pre_tasks:
+    - name: Update apt cache if needed.
+      apt: update_cache=yes cache_valid_time=3600
+
+  roles:
+    # bootstrap and ufw
+    - {role: bootstrap, vars: {time_zone: 'Canada/Pacific'}} 
+    - python3
+    - {role: php, vars: {php_ver: "7.4"}}
+    - {role: docker, vars: {docker_group_members: ["docker", "bill"]}}
+    - {role: nodejs, vars: {nodejs_version: "12.x"}}
+#    - {role: ufw, vars: {ufw_open_ports: ['22', '80', '443', '8080', '8081', '9000', '9001']}}
+
+# Run it as usual like any standard playbook
+# -i inventory: inventory file, no need if it is configured in ansible.cfg
+# -K : required when the playbook needs sudo privileges to complete.
+# -l, --limit: limited to one or more hosts
+#$ ansible-playbook -i inventory -K playbook-local.yml
+#$ ansible-playbook -i inventory -K -l localhost playbook-local.yml
+#$ ansible-playbook -i inventory -K --limit "host1,host2" playbook-local.yml

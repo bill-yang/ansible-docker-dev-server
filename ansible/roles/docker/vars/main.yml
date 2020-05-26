@@ -1,0 +1,7 @@
+---
+docker_apt_packages:
+  - aptitude
+  - apt-transport-https
+  - ca-certificates
+  - software-properties-common
+  - curl

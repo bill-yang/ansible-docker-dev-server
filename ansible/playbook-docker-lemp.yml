@@ -1,0 +1,92 @@
+---
+# Create web (LEMP) develop environment
+# to start a fresh new install
+# delete all containers
+# docker container rm -vf $(docker ps -a -q)
+# delete all images
+# docker image rm -f $(docker images -a -q)
+
+- hosts: local
+  user: bill
+  become: no
+  vars:
+    # vars for images
+    - docker_path: "~/workspace/projects/devops/docker"
+    - image_list:
+      - { name: my-volume, tag: latest, directory: data }
+      - { name: my-db, tag: latest, directory: db }
+      - { name: my-redis, tag: latest, directory: redis }
+      - { name: web-server, tag: latest, directory: web-server }
+
+    # vars for containers
+    - data_volume: {name: my-volume, image: "my-volume:latest"}
+    - db: {name: my-db, image: "my-db:latest", root_password: root, database: dev, user: dev, password: dev, port: "3306:3306"}
+    - db_admin: {name: my-admin, image: "phpmyadmin/phpmyadmin", port: "8081:80"}
+    - redis: {name: my-redis, image: "my-redis:latest", port: "6379:6379"}
+    - web_server: {name: my-server, image: "web-server:latest", port: ["80:8080"]}
+
+  tasks:
+    # prepare docker images
+    - name: Build Docker images from Dockerfile 
+      docker_image:
+        name: "{{ item.name }}"
+        tag: "{{ item.tag }}"
+        source: build
+        build:
+          path: "{{ docker_path }}/{{ item.directory }}"
+          pull: false
+        state: present
+      with_items: "{{ image_list }}"
+
+    # Data container
+    - name: Create a volume docker
+      docker_container:
+        image: "{{ data_volume.image }}"
+        name: "{{ data_volume.name }}"
+        state: present
+
+    # MySQL container
+    # docker run --name my-db -e MYSQL_ROOT_PASSWORD=dev -d mysql:8.0
+    - name: Create a MySQL container.
+      docker_container:
+        image: "{{ db.image }}"
+        name: "{{ db.name }}"
+        volumes_from: "{{ data_volume.name }}"
+        ports: "{{ db.port }}"
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ db.root_password }}"
+          MYSQL_DATABASE: "{{ db.database }}"
+          MYSQL_USER: "{{ db.user }}"
+          MYSQL_PASSWORD: "{{ db.password }}"
+        state: started
+
+    # phpMyAdmin container
+    # docker run --name my-admin -d --link mysql:db -p 8081:80 phpmyadmin/phpmyadmin
+    - name: Create a phpMyAdmin container
+      docker_container:
+        image: "{{ db_admin.image }}"
+        name: "{{ db_admin.name }}"
+        links:
+          - "{{ db.name }}:db"
+        ports: "{{ db_admin.port }}"
+        state: started
+
+    # Redis container
+    # docker run --name redis -d redis redis-server
+    - name: Create a redis container
+      docker_container:
+        image: "{{ redis.image }}"
+        name: "{{ redis.name }}"
+        ports: "{{ redis.port }}"
+        state: started
+
+    # web server (nginx) container
+    # docker run --name my-server
+    - name: Create a web server container
+      docker_container:
+        image: "{{ web_server.image }}"
+        name: "{{ web_server.name }}"
+        volumes:
+          - "~/workspace/projects/devops/www/info:/var/www/html"
+        ports: "{{ web_server.port }}"
+        state: started

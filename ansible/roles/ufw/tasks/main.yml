@@ -1,0 +1,23 @@
+---
+- name: install ufw
+  apt: pkg=ufw state=present
+
+- name: disable and reset firewall
+  ufw: state=reset
+
+- name: Check if OpenSSH is installed
+  package_facts:
+    manager: "auto"
+
+- name: open firewall for ssh
+  ufw:
+    rule: allow
+    name: OpenSSH
+  when: "'OpenSSH' is in ansible_facts.packages"
+
+- name: open firewall on specific ports
+  ufw: rule=allow port={{ item }}
+  with_items: "{{ ufw_open_ports }}"
+
+- name: reload and enable firewall
+  ufw: state=enabled policy=deny

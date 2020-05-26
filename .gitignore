@@ -1,0 +1,12 @@
+# exclude everthing in log folder, but keep the log folder itself
+log/*
+!log/.gitkeep
+*.log
+*.retry
+.vagrant/*
+.vscode/*
+node_modules/*
+*.lock
+__pycahe__/*
+*.pyc
+.github/*

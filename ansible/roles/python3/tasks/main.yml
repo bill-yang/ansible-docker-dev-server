@@ -1,0 +1,11 @@
+---
+- name: Install Python packages
+  apt:
+    name: "{{ python_apt_packages }}"
+    state: present
+
+- name: Install (ansible) python package.
+  pip:
+    name: "{{ pip_install_list }}"
+    state: present
+    executable: pip3

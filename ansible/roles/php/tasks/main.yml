@@ -1,0 +1,58 @@
+---
+# Setup/install tasks.
+- import_tasks: setup-debian.yml
+  when: ansible_distribution == 'Debian'
+
+- import_tasks: setup-ubuntu.yml
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Install PHP {{ php_ver }}
+  apt:
+    name: "{{ php_apt_packages }}"
+    state: present
+    force: yes
+    update_cache: yes
+
+- name: Copy php conf file
+  template: src=www.conf.j2 dest=/etc/php/{{ php_ver }}/fpm/pool.d/www.conf
+  notify: restart php
+
+- name: Set PHP upload max filesize    
+  lineinfile: 
+    dest: /etc/php/{{ php_ver }}/fpm/php.ini
+    regexp: "^upload_max_filesize"
+    line: "upload_max_filesize = 128M"
+    state: present
+  notify: restart php
+
+- name: Set PHP post max filesize    
+  lineinfile: 
+    dest: /etc/php/{{ php_ver }}/fpm/php.ini
+    regexp: "^post_max_size"
+    line: "post_max_size = 128M"
+    state: present
+  notify: restart php
+
+# xdebug setting
+- name: Enable xdebug for php {{ php_ver }}
+  blockinfile:
+    dest: /etc/php/{{ php_ver }}/mods-available/xdebug.ini
+    block: |
+      xdebug.remote_enable=1
+      xdebug.remote_autostart=1
+      xdebug.remote_connect_back=1
+      xdebug.remote_host="192.168.56.1"
+      xdebug.remote_port=9000
+      xdebug.remote_log="/var/log/xdebug.log"
+      xdebug.profiler_enable=0
+      xdebug.profiler_output_dir="/tmp"
+      xdebug.max_nesting_level=1000
+      xdebug.show_local_vars=1
+      xdebug.idekey="VSCODE"
+  notify: restart php
+
+# start php
+- name: start php
+  service: 
+    name: "php{{ php_ver }}-fpm"
+    state: started

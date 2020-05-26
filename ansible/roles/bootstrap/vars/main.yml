@@ -1,0 +1,15 @@
+---
+apt_packages:
+  - aptitude
+  - apt-transport-https
+  - ca-certificates
+  - software-properties-common
+  - lsb-release
+  - vim
+  - git
+  - curl
+  - wget
+  - tmux
+  - fail2ban
+  - unattended-upgrades
+  - cowsay

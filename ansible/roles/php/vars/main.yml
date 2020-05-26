@@ -1,0 +1,18 @@
+---
+
+php_apt_packages:
+  - "php{{ php_ver }}-cli"
+  - "php{{ php_ver }}-common"
+  - "php{{ php_ver }}-curl"
+  - "php{{ php_ver }}-dev"
+  - "php{{ php_ver }}-fpm"
+  - "php{{ php_ver }}-gd"
+  - "php{{ php_ver }}-mbstring"
+  - "php{{ php_ver }}-mysql"
+  - "php{{ php_ver }}-opcache"
+  - "php{{ php_ver }}-json"
+  - "php{{ php_ver }}-xml"
+  - "php{{ php_ver }}-xmlrpc"
+  - "php{{ php_ver }}-zip"
+  - "php-redis"
+  - "php-xdebug"

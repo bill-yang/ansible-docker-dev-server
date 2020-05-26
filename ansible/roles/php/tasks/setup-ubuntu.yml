@@ -1,0 +1,4 @@
+---
+- name: Add PHP PPA in Ubuntu
+  apt_repository:
+    repo: "ppa:ondrej/php"

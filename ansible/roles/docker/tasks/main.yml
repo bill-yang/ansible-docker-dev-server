@@ -1,0 +1,46 @@
+---
+# to make sure that docker dependencies ready.
+- name: Install docker required packages
+  apt:
+    name: "{{ docker_apt_packages }}"
+    state: present
+    force: yes
+    update_cache: yes
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: "https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg"
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Update apt and install docker-ce
+  apt: update_cache=yes name=docker-ce state=latest
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  with_items: "{{ docker_group_members }}"
+
+- name: Enable docker systemd service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Prepare default daemon configuration
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+
+- name: Set periodic docker system prune
+  cron:
+    name: docker-prune
+    minute: "0"
+    hour: "*/2"
+    job: "docker container prune -f"

@@ -1,0 +1,19 @@
+---
+
+python_apt_packages:
+  - python3-apt
+  - python3-pip
+  - python3-venv
+  - python3-setuptools
+  - python3-mysqldb
+
+# pip3 install list
+pip_install_list:
+  - gunicorn
+  - pymongo
+  - flask
+  - flask-sqlalchemy
+  - pymysql
+  - cryptography
+  - httpie
+  - docker

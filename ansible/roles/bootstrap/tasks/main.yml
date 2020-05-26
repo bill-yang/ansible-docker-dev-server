@@ -1,0 +1,27 @@
+---
+- name: upgrade system
+  apt: upgrade=yes
+
+- name: install some commonly used packages
+  apt:
+    name: "{{ apt_packages }}"
+    state: present
+
+- name: set the server message of the day explaining ansible was the configuration management tool
+  copy: src=motd
+        dest=/etc/motd
+        mode=644
+
+- name: Create Timezone symbolic link 
+  file:
+    src: "/usr/share/zoneinfo/{{ time_zone }}"
+    dest: /etc/localtime
+    force: yes
+    state: link
+
+- name: enable unattended security updates option
+  debconf: name=unattended-upgrades
+           question='unattended-upgrades/enable_auto_updates'
+           value='true'
+           vtype='boolean'
+  notify: reconfigure unattended-upgrades
