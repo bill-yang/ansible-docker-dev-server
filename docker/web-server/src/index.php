@@ -1,10 +1,9 @@
-
 <?php
 class Application
 {
     // MySQL connection
     //const DBHOST = '192.168.56.201'; // <- vagrant guest OS IP
-    const DBHOST = 'db'; // '127.0.0.1'; // <- mysql docker server IP in vagrant
+    const DBHOST = '172.17.0.1'; // '127.0.0.1'; // <- mysql docker server IP in vagrant
     const DBNAME = 'dev';
     const DBUSER = 'dev';
     const DBPASS = 'dev';
@@ -30,9 +29,15 @@ class Application
         $dbname = self::DBNAME;
         $dbuser = self::DBUSER;
         $dbpass = self::DBPASS;
+        
+        try {
+            mysqli_report(MYSQLI_REPORT_ALL); // Traps all mysqli error
+            $connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
+            mysqli_select_db($connect, $dbname) or die("Could not open the db '$dbname'");
+        } catch (Exception $e) {
+            echo "==> MySQL Error: " . $e->getMessage() . '<br>';
+        }
 
-        $connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
-        mysqli_select_db($connect, $dbname) or die("Could not open the db '$dbname'");
         if ($connect) {
             echo "==> Connected to MySQL database [$dbname] at host [$dbhost] successfully.";
         } else {
@@ -47,7 +52,7 @@ class Application
         try {
             //Connecting to Redis server on localhost
             $redis = new Redis(); 
-            $redis->connect('127.0.0.1', 6379); 
+            $redis->connect('172.17.0.1', 6379); 
             echo "==> Connection to redis server successfully";
             //set the data in redis string
             $val =  "Redis test data";
@@ -64,6 +69,8 @@ class Application
         echo '<p/>';
     }
 }
+
+echo "This file comes with docker image. Remote IP [" . $_SERVER['REMOTE_ADDR'] . "].";
 
 $app = new Application();
 $app->dbCheck();

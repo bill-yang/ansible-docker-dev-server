@@ -7,6 +7,7 @@ LABEL Maintainer="Bill Yang <bill.yang@live.ca>" Description="Nginx stable & PHP
 # Note: need manually modify the supervisord.conf content according to php version
 ENV PHP_VERSION 7.4
 ENV RUN_USER www-data
+ENV RUN_USER_GROUP www-data
 
 # timezone
 ENV TZ America/Vancouver
@@ -33,7 +34,7 @@ RUN apt update -y && apt install --no-install-recommends --no-install-suggests -
     php-redis \
     php-xdebug
 
-# Enable php fpm service
+# Enable php fpm service (when the service is not able to start automatically)
 #RUN systemctl enable php${PHP_VERSION}-fpm
 #RUN service php${PHP_VERSION}-fpm start
 
@@ -42,6 +43,7 @@ RUN apt remove --purge --auto-remove -y \
 
 # Configure nginx
 COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY config/vhost.conf /etc/nginx/conf.d/vhost.conf
 # Remove default server definition
 RUN rm /etc/nginx/conf.d/default.conf
 
@@ -55,23 +57,32 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Setup document root
 RUN mkdir -p /var/www/html
+RUN mkdir -p /var/www/sites
 
 # Add application
 WORKDIR /var/www/html
 
+RUN groups ${RUN_USER_GROUP} &>/dev/null || groupadd -r ${RUN_USER_GROUP}
+RUN id -u ${RUN_USER} &>/dev/null || useradd ${RUN_USER} 
+
 # Make sure files/directories needed by processes are acceptable for the user
 RUN mkdir -p /run/php
-RUN chown -R ${RUN_USER} /var/www/html && \
-  chown -R ${RUN_USER} /run && \
-  chown -R ${RUN_USER} /var/lib && \
-  chown -R ${RUN_USER} /var/log
+RUN chown -R ${RUN_USER}:${RUN_USER_GROUP} /var/www/html && \
+    chown -R ${RUN_USER}:${RUN_USER_GROUP} /var/www/sites && \
+    chown -R ${RUN_USER}:${RUN_USER_GROUP} /run && \
+    chown -R ${RUN_USER}:${RUN_USER_GROUP} /var/lib && \
+    chown -R ${RUN_USER}:${RUN_USER_GROUP} /var/log
 
 # Switch to use a non-root user from here on
 USER ${RUN_USER}
-COPY src/ /var/www/html/
+
+# Add default web pages in docker
+COPY --chown=${RUN_USER}:${RUN_USER_GROUP} src/ /var/www/html/
+COPY --chown=${RUN_USER}:${RUN_USER_GROUP} src/ /var/www/sites/
 
 # Expose the port nginx is reachable on
-EXPOSE 8080 443 9000 9001
+# port 80 is a privilege port only root user can run
+EXPOSE 8080 10080
 
 # Let supervisord start nginx & php-fpm
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

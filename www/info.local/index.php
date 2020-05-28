@@ -29,9 +29,15 @@ class Application
         $dbname = self::DBNAME;
         $dbuser = self::DBUSER;
         $dbpass = self::DBPASS;
+        
+        try {
+            mysqli_report(MYSQLI_REPORT_ALL); // Traps all mysqli error
+            $connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
+            mysqli_select_db($connect, $dbname) or die("Could not open the db '$dbname'");
+        } catch (Exception $e) {
+            echo "==> MySQL Error: " . $e->getMessage() . '<br>';
+        }
 
-        $connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
-        mysqli_select_db($connect, $dbname) or die("Could not open the db '$dbname'");
         if ($connect) {
             echo "==> Connected to MySQL database [$dbname] at host [$dbhost] successfully.";
         } else {

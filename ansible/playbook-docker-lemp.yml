@@ -16,14 +16,14 @@
       - { name: my-volume, tag: latest, directory: data }
       - { name: my-db, tag: latest, directory: db }
       - { name: my-redis, tag: latest, directory: redis }
-      - { name: web-server, tag: latest, directory: web-server }
+      - { name: my-server, tag: latest, directory: web-server }
 
     # vars for containers
     - data_volume: {name: my-volume, image: "my-volume:latest"}
     - db: {name: my-db, image: "my-db:latest", root_password: root, database: dev, user: dev, password: dev, port: "3306:3306"}
     - db_admin: {name: my-admin, image: "phpmyadmin/phpmyadmin", port: "8081:80"}
     - redis: {name: my-redis, image: "my-redis:latest", port: "6379:6379"}
-    - web_server: {name: my-server, image: "web-server:latest", port: ["80:8080"]}
+    - web_server: {name: my-server, image: "my-server:latest", port: ["8080:8080"]}
 
   tasks:
     # prepare docker images
@@ -81,12 +81,14 @@
         state: started
 
     # web server (nginx) container
-    # docker run --name my-server
+    # docker run --name my-server my-server:latest
     - name: Create a web server container
       docker_container:
         image: "{{ web_server.image }}"
         name: "{{ web_server.name }}"
-        volumes:
-          - "~/workspace/projects/devops/www/info:/var/www/html"
+        links:
+          - "{{ db.name }}:db"
+          - "{{ redis.name }}:redis"
         ports: "{{ web_server.port }}"
         state: started
+        user: www-data
