@@ -11,7 +11,7 @@
         version: "v1.0"
         container_name: "flask-info"
         links: ["my-db:db", "my-redis:redis"]
-        ports: "5000:5000"
+        ports: "5500:5000"  #host port 5000 is reserved for logstash
         state: "started"
     - dev_server: {name: dev-server,
                   image: "my-server:latest",

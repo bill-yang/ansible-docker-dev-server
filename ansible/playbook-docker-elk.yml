@@ -1,0 +1,67 @@
+---
+# Create ELK (Elasticsearch/Kibana/Logstash) stack 
+- hosts: local
+  user: bill
+  become: no
+  vars:
+    # vars for images
+    - docker_path: "~/workspace/projects/devops/docker/elk"
+    - elk_list:
+      - { name: my-elasticsearch, tag: latest, directory: elasticsearch}
+      - { name: my-kibana, tag: latest, directory: kibana}
+      - { name: my-logstash, tag: latest, directory: logstash}
+
+  tasks:
+    # prepare docker images
+    - name: Build ELK images from Dockerfile 
+      docker_image:
+        name: "{{ item.name }}"
+        tag: "{{ item.tag }}"
+        source: build
+        build:
+          path: "{{ docker_path }}/{{ item.directory }}"
+          pull: false
+        state: present
+      with_items: "{{ elk_list }}"
+
+    # - create ELK docker containers
+    - name: Build ElasticSearch containers
+      docker_container:
+        image: "my-elasticsearch:latest"
+        name: "my-elasticsearch"
+        ports: 
+          - "9200:9200"
+          - "9300:9300"
+        env:
+          ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+          ELASTIC_PASSWORD: elastic
+          # Use single node discovery in order to disable production mode and avoid bootstrap checks
+          # see https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+          discovery.type: single-node
+        state: started
+
+    # - create Logstash docker containers
+    - name: Build LogStash containers
+      docker_container:
+        image: "my-logstash:latest"
+        name: "my-logstash"
+        links:
+          - "my-elasticsearch:elasticsearch"
+        ports:
+          - "5000:5000/tcp"
+          - "5000:5000/udp"
+          - "9600:9600"
+        env:
+          LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+        state: started
+
+    # - create Kibana  docker containers
+    - name: Build Kibana containers
+      docker_container:
+        image: "my-kibana:latest"
+        name: "my-kibana"
+        links:
+          - "my-elasticsearch:elasticsearch"
+        ports:
+          - "5601:5601"
+        state: started

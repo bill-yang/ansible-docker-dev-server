@@ -14,7 +14,17 @@ PLAYBOOK_DIR=~/workspace/projects/devops/ansible
 start() {
     # goto the playbook folder
     cd ${PLAYBOOK_DIR}
-    ansible-playbook playbook-docker-lemp.yml 
+    # web server
+    ansible-playbook playbook-docker-lemp.yml
+    # go back to previous folder
+    cd - >/dev/null
+}
+
+elk() {
+    # goto the playbook folder
+    cd ${PLAYBOOK_DIR}
+    # elk
+    ansible-playbook playbook-docker-elk.yml
     # go back to previous folder
     cd - >/dev/null
 }
@@ -22,6 +32,7 @@ start() {
 deploy() {
     # goto the playbook folder
     cd ${PLAYBOOK_DIR}
+    # application
     ansible-playbook playbook-docker-deploy.yml 
     # go back to previous folder
     cd - >/dev/null
@@ -30,7 +41,9 @@ deploy() {
 start_deploy() {
     # goto the playbook folder
     cd ${PLAYBOOK_DIR}
-    ansible-playbook playbook-docker-lemp.yml 
+    # web server
+    ansible-playbook playbook-docker-lemp.yml
+    # application
     ansible-playbook playbook-docker-deploy.yml 
     # go back to previous folder
     cd - >/dev/null
@@ -63,6 +76,7 @@ OPTIONS:
     -h      Display this help message and exit
     -s      Start develop environment
     -d      Deploy web applications
+    -e      Run ELK applications
     -a      Start and deploy
     -c      Clean/remove all docker containers and images
 
@@ -78,11 +92,16 @@ then
     help_message
     exit
 fi
-while getopts ":sdach:" opt; do
+while getopts ":sedach:" opt; do
     case "${opt}" in
         s)
             # Start the environment
             start
+            exit
+            ;;
+        e)
+            # ELK applications
+            elk
             exit
             ;;
         d)
