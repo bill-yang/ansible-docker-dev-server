@@ -23,7 +23,14 @@
     - db: {name: my-db, image: "my-db:latest", root_password: root, database: dev, user: dev, password: dev, port: "3306:3306"}
     - db_admin: {name: my-admin, image: "phpmyadmin/phpmyadmin", port: "8081:80"}
     - redis: {name: my-redis, image: "my-redis:latest", port: "6379:6379"}
-    - web_server: {name: my-server, image: "my-server:latest", port: ["8080:8080"]}
+    - web_server: {name: my-server, image: "my-server:latest", port: ["8080:8080"], user: www-data}
+    - dev_server: {name: dev-server,
+                  image: "my-server:latest",
+                  ports: ["80:10080"],
+                  links: ["my-db:db", "my-redis:redis"],
+                  volumes: ["~/workspace/projects/devops/www:/var/www/sites"],
+                  user: www-data
+                  }
 
   tasks:
     # prepare docker images
@@ -34,7 +41,7 @@
         source: build
         build:
           path: "{{ docker_path }}/{{ item.directory }}"
-          pull: false
+          pull: true
         state: present
       with_items: "{{ image_list }}"
 
@@ -80,7 +87,7 @@
         ports: "{{ redis.port }}"
         state: started
 
-    # web server (nginx) container
+    # web server container for testing my-server image
     # docker run --name my-server my-server:latest
     - name: Create a web server container
       docker_container:
@@ -90,5 +97,18 @@
           - "{{ db.name }}:db"
           - "{{ redis.name }}:redis"
         ports: "{{ web_server.port }}"
+        user: "{{ web_server.user }}"
         state: started
-        user: www-data
+
+    # dev server 
+    # Create a development web server
+    # docker run --name dev-server my-server:latest
+    - name: Create a develop web server container
+      docker_container:
+        image: "{{ dev_server.image }}"
+        name: "{{ dev_server.name }}"
+        links: "{{ dev_server.links }}"
+        volumes: "{{ dev_server.volumes }}"
+        ports: "{{ dev_server.ports }}"
+        user: "{{ dev_server.user }}"
+        state: started

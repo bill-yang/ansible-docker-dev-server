@@ -13,12 +13,6 @@
         links: ["my-db:db", "my-redis:redis"]
         ports: "5500:5000"  #host port 5000 is reserved for logstash
         state: "started"
-    - dev_server: {name: dev-server,
-                  image: "my-server:latest",
-                  ports: ["80:10080"],
-                  links: ["my-db:db", "my-redis:redis"],
-                  volumes: ["~/workspace/projects/devops/www:/var/www/sites"]
-                  }
 
   tasks:
     # - build webapp docker images
@@ -42,15 +36,3 @@
         ports: "{{ item.ports }}"
         state: "{{ item.state }}"
       with_items: "{{webapp_list}}"
-
-    # Create a development web server
-    # docker run --name dev-server my-server:latest
-    - name: Create a develop web server container
-      docker_container:
-        image: "{{ dev_server.image }}"
-        name: "{{ dev_server.name }}"
-        links: "{{ dev_server.links }}"
-        volumes: "{{ dev_server.volumes }}"
-        ports: "{{ dev_server.ports }}"
-        state: started
-        user: www-data
